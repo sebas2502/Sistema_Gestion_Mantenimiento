@@ -15,11 +15,14 @@ const repoOrden = AppDataSource.getRepository(OrdenTrabajo);
 const repoTarea = AppDataSource.getRepository(TareaMantenimiento);
 const repoDetalleOrden = AppDataSource.getRepository(DetalleOrden);
 
-const serviceOrden = new ServiceOrdenTrabajo(repoOrden,repoTarea,repoDetalleOrden);
+const serviceOrden = new ServiceOrdenTrabajo(repoOrden,repoDetalleOrden);
 
 const servicePlan = new ServicePlanMantenimiento(repoPlan , serviceOrden);
 
 const controllerPlan = new ControllerPlanMantenimiento(servicePlan);
 
-routerPlanMantenimiento.route('/ejecutar')
-            .post(controllerPlan.ejecutar)
+routerPlanMantenimiento.route('/')
+                       .get(controllerPlan.obtenerPlanes) 
+
+routerPlanMantenimiento.post('/ejecutar',controllerPlan.ejecutar)
+

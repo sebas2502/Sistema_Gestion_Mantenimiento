@@ -8,39 +8,66 @@ export class ServicePlanMantenimiento {
     private ordenService: ServiceOrdenTrabajo
   ) {}
 
-  // 🔍 1. Evaluar planes
+  // =========================
+  // 🟡 EJECUTAR PREVENTIVOS
+  // =========================
   async ejecutarPlanesPreventivos() {
-    const planes = await this.planRepo.find({
-      where: { activo: true },
-      relations: ["activo"],
-    });
+    try {
+      const planes = await this.planRepo.find({
+        where: { estaActivo: true }, // ✅ FIX correcto
+        relations: ["activo", "tareas"],
+      });
 
-    const hoy = new Date();
+      const hoy = new Date();
+      const resultados = [];
 
-    const resultados = [];
+      for (const plan of planes) {
+        // 🔥 Manejo seguro de fecha
+        const ultima = plan.fechaUltimaEjecucion || new Date(0);
 
-    for (const plan of planes) {
-      const ultima = plan.fechaUltimaEjecucion;
+        const diasDesdeUltima =
+          (hoy.getTime() - ultima.getTime()) /
+          (1000 * 60 * 60 * 24);
 
-      const diasDesdeUltima =
-        (hoy.getTime() - ultima.getTime()) / (1000 * 60 * 60 * 24);
+       if (diasDesdeUltima >= plan.frecuenciaDias) {
 
-     
-      if (diasDesdeUltima >= plan.frecuenciaDias) {
-        const orden =
-          await this.ordenService.crearPreventivaDesdePlan(plan);
+  const orden =
+    await this.ordenService.crearPreventivaDesdePlan(plan);
 
-        // actualizar última ejecución
-        plan.fechaUltimaEjecucion = hoy;
-        await this.planRepo.save(plan);
+  await this.planRepo
+    .createQueryBuilder()
+    .update()
+    .set({ fechaUltimaEjecucion: hoy })
+    .where("id = :id", { id: plan.id })
+    .execute();
 
-        resultados.push({
-          planId: plan.id,
-          orden,
-        });
+  resultados.push({
+    planId: plan.id,
+    ordenId: orden.id,
+    diasDesdeUltimaEjecucion: Math.floor(diasDesdeUltima),
+    activo: plan.activo?.nombre || "N/A",
+  });
+}
       }
+
+      return resultados;
+    } catch (error: any) {
+      console.error("ERROR EN SERVICE PREVENTIVO:", error);
+      throw new Error(error.message || "Error al ejecutar planes preventivos");
     }
-    
-    return resultados;
+  }
+
+  // =========================
+  // 📋 OBTENER PLANES
+  // =========================
+  async obtenerPlanes() {
+    try {
+      return await this.planRepo.find({
+        relations: ["activo", "tareas"],
+      });
+    } catch (error: any) {
+      console.error("ERROR AL OBTENER PLANES:", error);
+      throw new Error(error.message || "Error al obtener planes");
+    }
   }
 }

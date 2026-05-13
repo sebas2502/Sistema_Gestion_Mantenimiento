@@ -12,10 +12,14 @@ const repoTarea = AppDataSource.getRepository(TareaMantenimiento);
 const repoOrden = AppDataSource.getRepository(OrdenTrabajo);
 const repoDetalle = AppDataSource.getRepository(DetalleOrden);
 
-const serviceOrden = new ServiceOrdenTrabajo(repoOrden,repoTarea,repoDetalle);
+const serviceOrden = new ServiceOrdenTrabajo(repoOrden,repoDetalle);
 
 const controllerOrden = new ControllerOrdenTrabajo(serviceOrden);
 
 routerOrden
-  .route('/:ordenId/detalles/:detalleId')
-  .patch(controllerOrden.completarDetalle);
+  
+routerOrden.route('/')
+             .get(controllerOrden.obtenerOrdenes) 
+
+routerOrden.patch("/detalles/:id", controllerOrden.completarDetalle);
+routerOrden.get("/:id", controllerOrden.obtenerOrden);

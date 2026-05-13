@@ -18,6 +18,7 @@ export class ServiceAnalisis {
 
   async analizarActivo(activoId: number) {
     let ordenGenerada = null;
+    let motivoOrden = null;
 
     // 🔹 1. Obtener incidencias
     const incidencias = await this.repoIncidencia.find({
@@ -58,13 +59,23 @@ export class ServiceAnalisis {
     const sugerencias =
       this.recomendacionService.generarSugerencias(analisis);
 
-    // 🔥 6. GENERAR ORDEN AUTOMÁTICA (PREDICTIVO)
-    if (mtbf < 50 && tendencia === Tendencia.AUMENTO) {
-      ordenGenerada =
-        await this.ordenTrabajoService.crearPredictivaDesdeAnalisis(
-          analisis
-        );
-    }
+
+
+    //GENERAR ORDEN AUTOMÁTICA (PREDICTIVO)
+   
+
+// validar si ya existe orden abierta
+      const existeOrdenAbierta =
+        await this.ordenTrabajoService.obtenerOrdenPorId(activoId);
+
+   if (mtbf < 50 && tendencia === Tendencia.AUMENTO) {
+  if (!existeOrdenAbierta) {
+    ordenGenerada =
+      await this.ordenTrabajoService.crearPredictivaDesdeAnalisis(analisis);
+  } else {
+    motivoOrden = "YA_EXISTE_ORDEN_ABIERTA";
+  }
+}
 
     // 🔹 7. Limpiar alertas
     const alertasLimpias = alertas.map((a) => ({
@@ -79,6 +90,7 @@ export class ServiceAnalisis {
       alertas: alertasLimpias,
       sugerencias,
       ordenGenerada,
+      motivoOrden
     };
   }
 

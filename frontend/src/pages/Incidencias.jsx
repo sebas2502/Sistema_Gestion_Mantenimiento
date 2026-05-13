@@ -65,7 +65,7 @@ export default function Incidencias() {
     // 🔥 OBJETO CORRECTO
     const nueva = {
       descripcion,
-      criticidad: "ALTA", // después lo hacemos dinámico
+      criticidad: "ALTA", 
       activo: { id: Number(activoId) },
     };
 

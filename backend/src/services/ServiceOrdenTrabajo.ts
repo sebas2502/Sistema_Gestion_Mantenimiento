@@ -1,157 +1,180 @@
 import { Repository } from "typeorm";
 import { OrdenTrabajo } from "../models/OrdenTrabajo";
-import { Incidencia } from "../models/Incidencia";
 import { PlanMantenimiento } from "../models/PlanMantenimiento";
 import { Analisis } from "../models/Analisis";
-import { EstadoOrden, TipoOrden } from "../enums/enums";
-import { TareaMantenimiento } from "../models/TareaMantenimiento";
 import { DetalleOrden } from "../models/DetalleOrden";
+import { EstadoOrden, TipoOrden } from "../enums/enums";
+import { Incidencia } from "../models/Incidencia";
 
 export class ServiceOrdenTrabajo {
   constructor(
     private ordenRepo: Repository<OrdenTrabajo>,
-    private tareaRepo: Repository<TareaMantenimiento>,
     private detalleRepo: Repository<DetalleOrden>
   ) {}
 
   // =========================
-  // 🔧 CORRECTIVO
-  // =========================
-  async crearCorrectivaDesdeIncidencia(incidencia: Incidencia) {
-    const orden = this.ordenRepo.create({
-      activo: incidencia.activo,
-      tipo: TipoOrden.CORRECTIVO,
-      estado: EstadoOrden.ABIERTA,
-      descripcion: `Orden correctiva generada por incidencia: ${incidencia.descripcion}`,
-      incidencia,
-    });
-
-    return await this.ordenRepo.save(orden);
-  }
-
-  // =========================
-  // 🛠️ PREVENTIVO (DESDE PLAN)
+  // 🟡 PREVENTIVO
   // =========================
   async crearPreventivaDesdePlan(plan: PlanMantenimiento) {
-    // 🔹 1. Obtener tareas del plan
-    const tareas = await this.tareaRepo.find({
-      where: { plan: { id: plan.id } },
+    const orden = this.ordenRepo.create({
+      tipo: TipoOrden.PREVENTIVO,
+      activo: { id: plan.activo.id } as any,
+      descripcion: `Mantenimiento preventivo - ${plan.activo.nombre}`,
+      estado: EstadoOrden.EN_PROCESO,
+      planMantenimiento: { id: plan.id } as any,
     });
 
-    // 🔹 2. Convertir tareas → detalles de orden
-    const detalles = tareas.map((t) =>
+    const ordenGuardada = await this.ordenRepo.save(orden);
+
+    const detalles = plan.tareas.map((t) =>
       this.detalleRepo.create({
         descripcion: t.descripcion,
         completado: false,
+        orden: ordenGuardada,
       })
     );
 
-    // 🔹 3. Crear orden
-    const orden = this.ordenRepo.create({
-      activo: plan.activo,
-      tipo: TipoOrden.PREVENTIVO,
-      estado: EstadoOrden.ABIERTA, // ⚠️ corregido (no string)
-      descripcion: `Mantenimiento preventivo: ${plan.descripcion}`,
-      detalles,
-    });
+    await this.detalleRepo.save(detalles);
 
-    return await this.ordenRepo.save(orden);
+    ordenGuardada.detalles = detalles;
+
+    return ordenGuardada;
   }
 
   // =========================
-  // 🧠 PREDICTIVO (ANÁLISIS)
+  // 🔵 PREDICTIVO
   // =========================
   async crearPredictivaDesdeAnalisis(analisis: Analisis) {
-    // 🔹 Evitar duplicados
-    const existente = await this.ordenRepo.findOne({
-      where: {
-        analisis: { id: analisis.id },
-      },
+    const orden = this.ordenRepo.create({
+      tipo: TipoOrden.PREDICTIVO,
+      activo: { id: analisis.activo.id } as any,
+      descripcion: "Mantenimiento predictivo",
+      estado: EstadoOrden.EN_PROCESO,
+      analisis: { id: analisis.id } as any,
     });
 
-    if (existente) {
-      return existente;
+    const ordenGuardada = await this.ordenRepo.save(orden);
+
+    let detalles: DetalleOrden[] = [];
+
+    if (analisis.mtbf < 50) {
+      detalles.push(
+        this.detalleRepo.create({
+          descripcion: "Inspección urgente del activo",
+          completado: false,
+          orden: ordenGuardada,
+        })
+      );
     }
 
-    const orden = this.ordenRepo.create({
-      activo: analisis.activo,
-      tipo: TipoOrden.PREDICTIVO,
-      estado: EstadoOrden.ABIERTA,
-      descripcion: "Orden generada automáticamente por análisis predictivo",
-      analisis,
-    });
+    if (analisis.tendencia === "AUMENTO_DE_FALLAS") {
+      detalles.push(
+        this.detalleRepo.create({
+          descripcion: "Revisión completa del activo",
+          completado: false,
+          orden: ordenGuardada,
+        })
+      );
+    }
 
-    return await this.ordenRepo.save(orden);
+    if (detalles.length === 0) {
+      detalles.push(
+        this.detalleRepo.create({
+          descripcion: "Monitoreo general del activo",
+          completado: false,
+          orden: ordenGuardada,
+        })
+      );
+    }
+
+    await this.detalleRepo.save(detalles);
+
+    ordenGuardada.detalles = detalles;
+
+    return ordenGuardada;
   }
 
-  // =========================
-// ✅ COMPLETAR TAREA
-// =========================
-async completarDetalle(ordenId: number, detalleId: number) {
-  const orden = await this.ordenRepo.findOne({
-    where: { id: ordenId },
-    relations: ["detalles"],
+  async crearCorrectivaDesdeIncidencia(
+  incidencia: Incidencia
+) {
+  const orden = this.ordenRepo.create({
+    tipo: TipoOrden.CORRECTIVO,
+
+    activo: { id: incidencia.activo.id } as any,
+
+    descripcion: `Orden correctiva generada por incidencia #${incidencia.id}`,
+
+    estado: EstadoOrden.EN_PROCESO,
+
+    incidencia: { id: incidencia.id } as any,
   });
 
-  if (!orden) {
-    throw new Error("Orden no encontrada");
-  }
+  const ordenGuardada = await this.ordenRepo.save(orden);
 
-  const detalle = orden.detalles.find(d => d.id === detalleId);
+  // 🔹 Crear detalle inicial
+  const detalle = this.detalleRepo.create({
+    descripcion: incidencia.descripcion,
+    completado: false,
+    orden: ordenGuardada,
+  });
 
-  if (!detalle) {
-    throw new Error("Detalle no encontrado en la orden");
-  }
-
-  // 🔹 marcar como completado
-  detalle.completado = true;
   await this.detalleRepo.save(detalle);
 
-  // 🔥 verificar si todas están completas
-  const todasCompletas = orden.detalles.every(d => d.completado);
+  ordenGuardada.detalles = [detalle];
 
-  if (todasCompletas) {
-    orden.estado = EstadoOrden.FINALIZADA;
-    orden.fechaCierre = new Date();
-    await this.ordenRepo.save(orden);
-  }
-
-  return {
-    detalle,
-    ordenActualizada: todasCompletas ? orden : null,
-  };
+  return ordenGuardada;
 }
 
   // =========================
-  // 🔄 CAMBIO DE ESTADO
+  // 📋 LISTADO
   // =========================
-  async cambiarEstado(ordenId: number, nuevoEstado: EstadoOrden) {
-    const orden = await this.ordenRepo.findOne({
-      where: { id: ordenId },
-      relations: ["detalles"], // 🔥 importante para lógica futura
+  async obtenerOrdenes() {
+    return await this.ordenRepo.find({
+      relations: ["activo", "detalles"],
+      order: { id: "DESC" },
     });
+  }
+
+  // =========================
+  // 🔍 DETALLE POR ID (🔥 FIX CLAVE)
+  // =========================
+  async obtenerOrdenPorId(id: number) {
+    const orden = await this.ordenRepo
+      .createQueryBuilder("orden")
+      .leftJoinAndSelect("orden.activo", "activo")
+      .leftJoinAndSelect("orden.detalles", "detalles")
+      .where("orden.id = :id", { id })
+      .getOne();
 
     if (!orden) {
       throw new Error("Orden no encontrada");
     }
 
-    // 🔥 regla importante (te sube nivel)
-    if (nuevoEstado === EstadoOrden.FINALIZADA) {
-      const hayPendientes = orden.detalles?.some(
-        (d) => !d.completado
-      );
+    return orden;
+  }
 
-      if (hayPendientes) {
-        throw new Error(
-          "No se puede finalizar la orden: hay tareas pendientes"
-        );
-      }
+  // =========================
+  // ✅ COMPLETAR TAREA
+  // =========================
+  async completarDetalle(detalleId: number) {
+    const detalle = await this.detalleRepo.findOne({
+      where: { id: detalleId },
+      relations: ["orden", "orden.detalles"],
+    });
 
-      orden.fechaCierre = new Date();
+    if (!detalle) throw new Error("Detalle no encontrado");
+
+    detalle.completado = true;
+    await this.detalleRepo.save(detalle);
+
+    const todas = detalle.orden.detalles.every((d) => d.completado);
+
+    if (todas) {
+      detalle.orden.estado = EstadoOrden.FINALIZADA;
+      detalle.orden.fechaCierre = new Date();
+      await this.ordenRepo.save(detalle.orden);
     }
 
-    orden.estado = nuevoEstado;
-
-    return await this.ordenRepo.save(orden);
+    return detalle;
   }
 }
