@@ -18,7 +18,7 @@ const repoTarea = AppDataSource.getRepository(TareaMantenimiento);
 const repoDetalle = AppDataSource.getRepository(DetalleOrden);
 
 // 🔹 Services
-const ordenService = new ServiceOrdenTrabajo(ordenRepo,repoTarea,repoDetalle);
+const ordenService = new ServiceOrdenTrabajo(ordenRepo,repoDetalle);
 const incidenciaService = new ServiceIncidencia(
   incidenciaRepo,
   ordenService

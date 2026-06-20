@@ -5,24 +5,22 @@ export class ControllerIncidencia {
   constructor(private incidenciaService: ServiceIncidencia) {}
 
   // =========================
-  // 🛠️ CREAR INCIDENCIA
+  // Creacion de una incidencia
   // =========================
   crearIncidencia = async (req: Request, res: Response) => {
     try {
       const data = req.body;
+  
+      
 
-      // 🔍 DEBUG (lo podés dejar por ahora)
-      console.log("BODY:", data);
-      console.log("ES ARRAY:", Array.isArray(data));
-
-      // ❌ VALIDACIÓN IMPORTANTE
+      // Evaluamos si recibimos un objeto, caso contrario informamos el error
       if (Array.isArray(data)) {
         return res.status(400).json({
           error: "Se esperaba una incidencia (objeto), no un array",
         });
       }
 
-      // ❌ VALIDACIONES BÁSICAS (mínimas pero reales)
+      // VALIDACIONES BÁSICAS
       if (!data.descripcion) {
         return res.status(400).json({
           error: "La descripción es obligatoria",
@@ -35,11 +33,10 @@ export class ControllerIncidencia {
         });
       }
 
-      // 🔥 LLAMADA AL SERVICE
-      const resultado =
-        await this.incidenciaService.crearIncidencia(data);
+      //Llamamos al servicio
+      const resultado = await this.incidenciaService.crearIncidencia(data);
 
-      // ✅ RESPUESTA
+      
       res.status(201).json({
         message: "Incidencia creada correctamente",
         data: resultado,
@@ -52,11 +49,10 @@ export class ControllerIncidencia {
   };
 
   // =========================
-  // 📋 LISTAR INCIDENCIAS
+  // Obtener incidencias
   // =========================
   obtenerIncidencias = async (_req: Request, res: Response) => {
-    console.log(_req.body);
-    console.log(Array.isArray(_req.body));
+    ;
     try {
       const incidencias =
         await this.incidenciaService.obtenerIncidencias();
@@ -70,7 +66,7 @@ export class ControllerIncidencia {
   };
 
   // =========================
-  // 🔍 OBTENER POR ID
+  // Obtener incidencia por id
   // =========================
   obtenerIncidenciaPorId = async (req: Request, res: Response) => {
     try {

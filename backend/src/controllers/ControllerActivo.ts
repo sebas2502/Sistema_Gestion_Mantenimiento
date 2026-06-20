@@ -5,7 +5,7 @@ export class ControllerActivo {
   constructor(private activoService: ServiceActivo) {}
 
   // =========================
-  // 📋 GET /activos
+  // Obtener todos los activos
   // =========================
   obtenerActivos = async (_req: Request, res: Response) => {
     try {
@@ -23,7 +23,7 @@ export class ControllerActivo {
   };
 
   // =========================
-  // 🔍 GET /activos/:id
+  // Buscar activo por id
   // =========================
   obtenerActivoPorId = async (req: Request, res: Response) => {
     try {

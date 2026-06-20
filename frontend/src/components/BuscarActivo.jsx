@@ -7,7 +7,7 @@ export default function BuscadorActivo({ onSelect }) {
   const [activos, setActivos] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // 🔥 cargar todos UNA vez
+  // cargamos todos una vez
   useEffect(() => {
     cargarActivos();
   }, []);
@@ -30,7 +30,7 @@ export default function BuscadorActivo({ onSelect }) {
     }
   };
 
-  // 🔥 filtro en frontend
+  //filtro en frontend
   const filtrados = activos.filter((a) =>
     `${a.nombre} ${a.codigo}`
       .toLowerCase()
@@ -46,7 +46,7 @@ export default function BuscadorActivo({ onSelect }) {
   return (
     <div className="relative w-full">
 
-      {/* 🔍 INPUT */}
+    
       <input
         type="text"
         placeholder="Buscar activo por nombre o código..."
@@ -59,7 +59,7 @@ export default function BuscadorActivo({ onSelect }) {
         onFocus={() => setMostrar(true)}
       />
 
-      {/* 📋 LISTA */}
+      {/* LISTA */}
       {mostrar && (
         <div className="absolute z-50 bg-white border rounded mt-1 w-full max-h-60 overflow-y-auto shadow">
 

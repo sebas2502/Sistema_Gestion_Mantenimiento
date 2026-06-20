@@ -7,6 +7,7 @@ import { OrdenTrabajo } from "../models/OrdenTrabajo";
 import { ServiceOrdenTrabajo } from "../services/ServiceOrdenTrabajo";
 import { TareaMantenimiento } from "../models/TareaMantenimiento";
 import { DetalleOrden } from "../models/DetalleOrden";
+import router from "./RouterTareaMantenimiento";
 
 export const routerPlanMantenimiento = express.Router();
 
@@ -26,3 +27,6 @@ routerPlanMantenimiento.route('/')
 
 routerPlanMantenimiento.post('/ejecutar',controllerPlan.ejecutar)
 
+routerPlanMantenimiento.post('/crear',controllerPlan.crearPlan)
+
+router.patch('/:id/desactivar',controllerPlan.desactivarPlan)

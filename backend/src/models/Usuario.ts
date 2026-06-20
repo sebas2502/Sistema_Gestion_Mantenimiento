@@ -14,6 +14,9 @@ export class Usuario {
   @Column({ unique: true })
   email!: string;
 
+  @Column({nullable:false})
+  clave!: string;
+
   @Column()
   rol!: string; 
 

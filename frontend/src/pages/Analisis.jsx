@@ -33,13 +33,23 @@ export default function Analisis() {
 
   const analisis = resultado?.analisis;
 
-  const correspondeOrden =
-    analisis &&
-    analisis.mtbf < 50 &&
-    analisis.tendencia === "AUMENTO_DE_FALLAS";
+// 🔹 Detecta si el activo requiere atención
+const requiereAtencion =
+  analisis &&
+  (
+    analisis.mtbf < 50 ||
+    analisis.tendencia === "AUMENTO_DE_FALLAS"
+  );
 
-  const yaExisteOrden =
-    correspondeOrden && !resultado?.ordenGenerada;
+// 🔹 Detecta si corresponde generar orden automática
+const correspondeOrden =
+  analisis &&
+  analisis.mtbf < 50 &&
+  analisis.tendencia === "AUMENTO_DE_FALLAS";
+
+// 🔹 Detecta si ya existe una orden abierta
+const yaExisteOrden =
+  correspondeOrden && !resultado?.ordenGenerada;
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
@@ -137,24 +147,35 @@ export default function Analisis() {
             </div>
           )}
 
-          {/* ESTADO FINAL */}
-          {resultado.ordenGenerada && (
-            <div className="bg-green-100 text-green-800 p-3 rounded">
-              Se generó una orden de mantenimiento automáticamente
-            </div>
-          )}
+         {/* 🔹 RESULTADO FINAL */}
 
-          {yaExisteOrden && (
-            <div className="bg-yellow-100 text-yellow-800 p-3 rounded">
-              Ya existe una orden abierta para este activo
-            </div>
-          )}
+{/* ORDEN GENERADA */}
+{resultado.ordenGenerada && (
+  <div className="bg-green-100 text-green-800 p-3 rounded">
+    Se generó una orden de mantenimiento automáticamente
+  </div>
+)}
 
-          {!correspondeOrden && (
-            <div className="bg-gray-100 text-gray-700 p-3 rounded">
-              No se requiere mantenimiento en este momento
-            </div>
-          )}
+{/* YA EXISTE ORDEN */}
+{yaExisteOrden && (
+  <div className="bg-yellow-100 text-yellow-800 p-3 rounded">
+    Ya existe una orden abierta para este activo
+  </div>
+)}
+
+{/* REQUIERE ATENCIÓN PERO NO ORDEN */}
+{requiereAtencion && !correspondeOrden && (
+  <div className="bg-orange-100 text-orange-800 p-3 rounded">
+    Se recomienda realizar una inspección preventiva del activo
+  </div>
+)}
+
+{/* SIN RIESGO */}
+{!requiereAtencion && (
+  <div className="bg-gray-100 text-gray-700 p-3 rounded">
+    No se requiere mantenimiento en este momento
+  </div>
+)}
         </div>
       )}
     </div>

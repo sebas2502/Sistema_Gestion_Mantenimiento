@@ -13,8 +13,8 @@ export class PlanMantenimiento {
   @Column()
   descripcion!: string;
 
-  @Column()
-  fechaUltimaEjecucion!: Date;
+  @Column({type:"timestamp",nullable:true})
+  fechaUltimaEjecucion?: Date;
 
   @Column()
   frecuenciaDias!: number;

@@ -16,6 +16,16 @@ export const ejecutarPlanes = async () => {
   }
 };
 
+export const crearPlan = async (data) => {
+  return await api.post('/planes/crear', data);
+};
+
+export const desactivarPlan = async (id) => {
+  return await api.patch(
+    `/planes/${id}/desactivar`
+  );
+};
+
 export const obtenerPlanes = async () => {
 
   try {

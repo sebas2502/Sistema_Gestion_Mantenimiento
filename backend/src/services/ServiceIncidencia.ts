@@ -9,22 +9,22 @@ export class ServiceIncidencia {
   ) {}
 
   // =========================
-  //  CREAR INCIDENCIA
+  // 🛠️ CREAR INCIDENCIA
   // =========================
   async crearIncidencia(data: DeepPartial<Incidencia>) {
 
-    // VALIDACIÓN CLAVE
+    // 🔴 VALIDACIÓN CLAVE
     if (Array.isArray(data)) {
       throw new Error("Se esperaba un objeto, no un array");
     }
 
-    //  1. Crear entidad
+    // 🔹 1. Crear entidad
     const incidencia = this.incidenciaRepo.create(data);
 
-    //  2. Guardar
+    // 🔹 2. Guardar
     const incidenciaGuardada = await this.incidenciaRepo.save(incidencia);
 
-    //  3. Recargar con relaciones
+    // 🔥 3. Recargar con relaciones (CLAVE)
     const incidenciaCompleta = await this.incidenciaRepo.findOne({
       where: { id: incidenciaGuardada.id },
       relations: ["activo", "usuario"], // ajustá si no usás usuario
@@ -34,7 +34,7 @@ export class ServiceIncidencia {
       throw new Error("No se pudo recuperar la incidencia");
     }
 
-    // 🔥 4. Generar orden correctiva
+    // Generar orden correctiva
     const orden =
       await this.ordenTrabajoService.crearCorrectivaDesdeIncidencia(
         incidenciaCompleta

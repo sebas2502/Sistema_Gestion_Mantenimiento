@@ -7,9 +7,10 @@ import { ServiceOrdenTrabajo } from "./ServiceOrdenTrabajo";
 import { Tendencia } from "../enums/enums";
 import { OrdenTrabajo } from "../models/OrdenTrabajo";
 
+
 export class ServiceAnalisis {
   constructor(
-    private repoIncidencia: Repository<Incidencia>,
+  private repoIncidencia: Repository<Incidencia>,
   private repoAnalisis: Repository<Analisis>,
   private alertaRepo: Repository<Alerta>,
   private recomendacionService: ServiceRecomendacion,
@@ -65,8 +66,10 @@ export class ServiceAnalisis {
    
 
 // validar si ya existe orden abierta
-      const existeOrdenAbierta =
-        await this.ordenTrabajoService.obtenerOrdenPorId(activoId);
+   const existeOrdenAbierta =
+    await this.ordenTrabajoService.obtenerOrdenAbiertaPorActivo(
+    activoId
+  );
 
    if (mtbf < 50 && tendencia === Tendencia.AUMENTO) {
   if (!existeOrdenAbierta) {
